@@ -34,10 +34,13 @@ void KeyValueStore::run_cleaner(std::chrono::milliseconds interval) {
 		}
 		store_lock.unlock();
 
+		std::unique_lock<std::shared_mutex> write_lock(mutex_);
 		for (const auto& key : keys_to_delete) {
-			if (store_[key].is_expired()) {
+			auto it = store_.find(key);
+			if (it != store_.end() && it->second.is_expired()) {
 				del(key);
 			}
 		}
+		write_lock.unlock();
 	}
 }
