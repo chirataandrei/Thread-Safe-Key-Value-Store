@@ -44,3 +44,25 @@ void KeyValueStore::run_cleaner(std::chrono::milliseconds interval) {
 		write_lock.unlock();
 	}
 }
+
+void KeyValueStore::set(const std::string& key, const std::string& value, std::optional<std::chrono::milliseconds> ttl)
+{
+	std::optional<std::chrono::steady_clock::time_point> expire_at = std::nullopt;
+	
+	if (ttl.has_value()) {
+		expire_at = std::chrono::steady_clock::now() + *ttl;
+	}
+
+	std::unique_lock<std::shared_mutex> store_lock(mutex_);
+	store_.insert_or_assign(key, StoreValue{value, expire_at});
+
+	store_lock.unlock();
+}
+
+std::optional<std::string> KeyValueStore::get(const std::string& key) const {
+	std::shared_lock<std::shared_mutex> get_lock(mutex_);
+
+	
+
+	get_lock.unlock();
+}
