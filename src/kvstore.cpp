@@ -38,7 +38,7 @@ void KeyValueStore::run_cleaner(std::chrono::milliseconds interval) {
 		for (const auto& key : keys_to_delete) {
 			auto it = store_.find(key);
 			if (it != store_.end() && it->second.is_expired()) {
-				del(key);
+				store_.erase(it);
 			}
 		}
 		write_lock.unlock();
