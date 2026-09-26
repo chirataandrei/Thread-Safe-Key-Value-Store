@@ -14,7 +14,7 @@ class KeyValueStore {
 		// background reaper loop method
 		void run_cleaner(std::chrono::milliseconds interval);
 
-		// stock data
+		// store data
 		std::unordered_map<std::string, StoreValue> store_;
 
 		// enables concurrent reads and exclusive writes
@@ -25,7 +25,7 @@ class KeyValueStore {
 		std::atomic<bool> stop_requested_{false};
 			
 		// signaling primitives to suspend the reaper thread without busy-waiting
-		std::condition_variable_any cv_stop_;
+		std::condition_variable cv_stop_;
 		std::mutex cv_mutex_;
 
 	public:
