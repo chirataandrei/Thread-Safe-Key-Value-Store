@@ -64,18 +64,14 @@ std::optional<std::string> KeyValueStore::get(const std::string& key) const {
 
 	auto it = store_.find(key);
 	if (it == store_.end()) {
-		get_lock.unlock();
 		return std::nullopt;
 	}
 
-	if (it->second.expire_at != std::nullopt && it->second.is_expired() == true) {
-		get_lock.unlock();
+	if (it->second.is_expired() == true) {
 		return std::nullopt;
 	}
 	
-	std::string value = it->second.value;
-	get_lock.unlock();
-	return value;
+	return it->second.value;
 }
 
 bool KeyValueStore::del(const std::string& key) {
@@ -83,11 +79,20 @@ bool KeyValueStore::del(const std::string& key) {
 
 	auto it = store_.find(key);
 	if (it == store_.end()) {
-		del_lock.unlock();
 		return false;
 	}
 
-	store_.erase(key);
-	del_lock.unlock();
+	store_.erase(it);
+	return true;
+}
+
+bool KeyValueStore::exists(const std::string& key) const {
+	std::shared_lock<std::shared_mutex> lock(mutex_);
+
+	auto it = store_.find(key);
+	if (it == store_.end() || it->second.is_expired()) {
+		return false;
+	}
+
 	return true;
 }
