@@ -62,7 +62,18 @@ void KeyValueStore::set(const std::string& key, const std::string& value, std::o
 std::optional<std::string> KeyValueStore::get(const std::string& key) const {
 	std::shared_lock<std::shared_mutex> get_lock(mutex_);
 
-	
+	auto it = store_.find(key);
+	if (it == store_.end()) {
+		get_lock.unlock();
+		return std::nullopt;
+	}
 
+	if (it->second.expire_at != std::nullopt && it->second.is_expired() == true) {
+		get_lock.unlock();
+		return std::nullopt;
+	}
+	
+	std::string value = it->second.value;
 	get_lock.unlock();
+	return value;
 }
