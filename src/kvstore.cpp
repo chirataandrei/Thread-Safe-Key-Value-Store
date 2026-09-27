@@ -77,3 +77,17 @@ std::optional<std::string> KeyValueStore::get(const std::string& key) const {
 	get_lock.unlock();
 	return value;
 }
+
+bool KeyValueStore::del(const std::string& key) {
+	std::unique_lock<std::shared_mutex> del_lock(mutex_);
+
+	auto it = store_.find(key);
+	if (it == store_.end()) {
+		del_lock.unlock();
+		return false;
+	}
+
+	store_.erase(key);
+	del_lock.unlock();
+	return true;
+}
