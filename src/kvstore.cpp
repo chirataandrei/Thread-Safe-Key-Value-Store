@@ -1,9 +1,7 @@
 #include "include/kvstore/kvstore.hpp"
 
 KeyValueStore::KeyValueStore(std::chrono::milliseconds cleanup_interval)
-{
-	reaper_thread_ = std::thread(&KeyValueStore::run_cleaner, this, cleanup_interval);
-}
+	: reaper_thread_(&KeyValueStore::run_cleaner, this, cleanup_interval) {}
 
 KeyValueStore::~KeyValueStore() {
 	stop_requested_ = true;
@@ -34,14 +32,16 @@ void KeyValueStore::run_cleaner(std::chrono::milliseconds interval) {
 		}
 		store_lock.unlock();
 
-		std::unique_lock<std::shared_mutex> write_lock(mutex_);
-		for (const auto& key : keys_to_delete) {
-			auto it = store_.find(key);
-			if (it != store_.end() && it->second.is_expired()) {
-				store_.erase(it);
+		if (!keys_to_delete.empty()) {
+			std::unique_lock<std::shared_mutex> write_lock(mutex_);
+			for (const auto& key : keys_to_delete) {
+				auto it = store_.find(key);
+				if (it != store_.end() && it->second.is_expired()) {
+					store_.erase(it);
+				}
 			}
+			write_lock.unlock();
 		}
-		write_lock.unlock();
 	}
 }
 
@@ -55,8 +55,6 @@ void KeyValueStore::set(const std::string& key, const std::string& value, std::o
 
 	std::unique_lock<std::shared_mutex> store_lock(mutex_);
 	store_.insert_or_assign(key, StoreValue{value, expire_at});
-
-	store_lock.unlock();
 }
 
 std::optional<std::string> KeyValueStore::get(const std::string& key) const {
